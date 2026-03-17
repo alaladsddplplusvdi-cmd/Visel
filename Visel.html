@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Виселица • Тёмная тема</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #121212;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .game-container {
+            background: #1e1e1e;
+            border-radius: 32px;
+            padding: 40px 30px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.7), 0 0 0 1px #333 inset;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .title {
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-weight: 400;
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+        }
+
+        .word-display {
+            background: #0f0f0f;
+            border-radius: 40px;
+            padding: 30px 20px;
+            margin-bottom: 25px;
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.8);
+        }
+
+        .word {
+            font-family: 'Courier New', monospace;
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #00ff99;
+            text-shadow: 0 0 10px #00ff9966;
+            letter-spacing: 10px;
+            word-break: break-all;
+        }
+
+        .info-panel {
+            background: #2a2a2a;
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            color: #e0e0e0;
+            font-size: 1.2rem;
+        }
+
+        .guesses {
+            color: #ff9966;
+            font-weight: 600;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .guess-input {
+            flex: 1;
+            background: #0f0f0f;
+            border: 1px solid #444;
+            border-radius: 60px;
+            padding: 16px 20px;
+            font-size: 1.4rem;
+            color: #fff;
+            text-align: center;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .guess-input:focus {
+            border-color: #00ff99;
+            box-shadow: 0 0 10px #00ff9966;
+        }
+
+        .guess-btn {
+            background: #2a2a2a;
+            border: none;
+            border-radius: 60px;
+            padding: 16px 30px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #e0e0e0;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #0f0f0f, 0 8px 12px rgba(0, 0, 0, 0.5);
+            transition: all 0.1s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .guess-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #0f0f0f, 0 5px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .guess-btn:hover {
+            background: #3a3a3a;
+        }
+
+        .message-area {
+            margin-top: 20px;
+            min-height: 40px;
+            color: #ffaa66;
+            font-size: 1.1rem;
+        }
+
+        .footer {
+            margin-top: 30px;
+            color: #555;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="title">⚡ Виселица ⚡</div>
+
+        <div class="word-display">
+            <div class="word" id="wordDisplay">_ _ _ _ _</div>
+        </div>
+
+        <div class="info-panel">
+            <span>Попыток осталось:</span>
+            <span class="guesses" id="guessesDisplay">6</span>
+        </div>
+
+        <div class="input-area">
+            <input type="text" class="guess-input" id="guessInput" maxlength="1" placeholder="буква">
+            <button class="guess-btn" id="guessBtn">Угадать</button>
+        </div>
+
+        <div class="message-area" id="messageDisplay"></div>
+
+        <div class="footer">тёмная тема • без излишеств</div>
+    </div>
+
+    <script>
+        (function() {
+            // Список слов (как в Java)
+            const words = ["hangman", "java", "swing", "programming", "openai"];
+            
+            // Состояние игры
+            let wordToGuess = '';
+            let hiddenWord = [];
+            let guessesLeft = 6;
+            let gameActive = true;
+
+            // Элементы DOM
+            const wordDisplay = document.getElementById('wordDisplay');
+            const guessesDisplay = document.getElementById('guessesDisplay');
+            const guessInput = document.getElementById('guessInput');
+            const guessBtn = document.getElementById('guessBtn');
+            const messageDisplay = document.getElementById('messageDisplay');
+
+            // Инициализация новой игры
+            function initGame() {
+                // Случайное слово
+                wordToGuess = words[Math.floor(Math.random() * words.length)];
+                hiddenWord = Array(wordToGuess.length).fill('_');
+                guessesLeft = 6;
+                gameActive = true;
+
+                updateDisplay();
+                messageDisplay.textContent = '';
+                guessInput.value = '';
+                guessInput.disabled = false;
+                guessBtn.disabled = false;
+                guessInput.focus();
+            }
+
+            // Обновление отображения слова и попыток
+            function updateDisplay() {
+                // Показываем буквы через пробел для читаемости
+                wordDisplay.textContent = hiddenWord.join(' ');
+                guessesDisplay.textContent = guessesLeft;
+            }
+
+            // Проверка введённой буквы
+            function makeGuess(letter) {
+                if (!gameActive) return;
+
+                // Приводим к нижнему регистру (слова в списке в нижнем)
+                letter = letter.toLowerCase();
+
+                // Проверка, что буква ещё не открыта
+                if (hiddenWord.includes(letter)) {
+                    messageDisplay.textContent = 'Эта буква уже открыта!';
+                    return;
+                }
+
+                let found = false;
+                for (let i = 0; i < wordToGuess.length; i++) {
+                    if (wordToGuess[i] === letter) {
+                        hiddenWord[i] = letter;
+                        found = true;
+                    }
+                }
+
+                if (!found) {
+                    guessesLeft--;
+                    messageDisplay.textContent = `Буквы «${letter}» нет в слове.`;
+                } else {
+                    messageDisplay.textContent = `Есть буква «${letter}»!`;
+                }
+
+                updateDisplay();
+
+                // Проверка условий победы/поражения
+                if (hiddenWord.join('') === wordToGuess) {
+                    endGame('Поздравляем! Вы отгадали слово!', true);
+                } else if (guessesLeft <= 0) {
+                    endGame(`Вы проиграли! Загаданное слово: ${wordToGuess}`, false);
+                }
+            }
+
+            // Завершение игры
+            function endGame(message, win) {
+                gameActive = false;
+                guessInput.disabled = true;
+                guessBtn.disabled = true;
+                messageDisplay.textContent = message;
+
+                // Автоматический перезапуск через 2 секунды
+                setTimeout(() => {
+                    initGame();
+                }, 2000);
+            }
+
+            // Обработчики событий
+            guessBtn.addEventListener('click', () => {
+                const input = guessInput.value.trim();
+                if (input.length === 0) {
+                    messageDisplay.textContent = 'Введите букву!';
+                    return;
+                }
+                const letter = input[0];
+                if (!/[a-zA-Z]/.test(letter)) {
+                    messageDisplay.textContent = 'Введите букву латинского алфавита!';
+                    guessInput.value = '';
+                    return;
+                }
+                makeGuess(letter);
+                guessInput.value = '';
+            });
+
+            guessInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    guessBtn.click();
+                }
+            });
+
+            // Старт игры
+            initGame();
+        })();
+    </script>
+</body>
+</html>
